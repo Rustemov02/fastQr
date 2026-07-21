@@ -1,37 +1,31 @@
-const categories = ["Soups", "Kebabs", "Drinks", "Desserts", "Salads"]
+import { useState } from "react";
+import { useAppSelector, useAppDispatch } from "../../store";
+import { addToCart, removeFromCart } from "../../store/slices/cartSlice";
+import CartDrawer from "../../components/customer/CartDrawer";
+import OrderSuccessModal from "../../components/customer/OrderSuccessModal";
 
-const dishes = [
-  {
-    name: "Lentil Soup",
-    description: "Traditional Turkish style with lemon and croutons.",
-    price: "4.50 AZN",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC1dDBlGX0BnGDlZ4NAyyHCo2ePdxUghwbhGiWZwrZ4CgPeXhFZnv4Eatbq-qwSHglOTrfxL_vR3sWiYb3rjE1NPR08wuKzpfSVkjG9CcJ9jdAPuperST9gsYtBQBBjnnreS0Ish_9MC-vjPKq3F__4jM7WxLamEkEpmL2RLDo7kUqGUBoVwAdhB3T2k34zXkpxBqRPDHIMkBZriv-yGBe9hJY6zREJNh7D2YRahDAQ_V3olGbzHSwu",
-  },
-  {
-    name: "Adana Kebab",
-    description: "Spiced hand-minced meat grilled on wide iron skewers.",
-    price: "12.00 AZN",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAxGIGUvwEERB-JiXaFbsd-hOAE3JJOt1vFoo3umi2ewjI8Wea4fMse6i7QoquhgCZWgUNSXIat7Fx5cEZtsz0HekipNNE1bXSwX068BqdaPzPcQKZyqUaMvBuGDH2Xa57qApc7Ch3DWDFw4vwBQ94NvCtGhhRjXjvKwLJbafg5VWITqq99q9wC6HwS8Gc7-jkvi60GC532WVF6xKs3SG2SGxxL4ECzKrbYxPE1QEEpd7GVs2yw9vWi",
-  },
-  {
-    name: "Fresh Lemonade",
-    description: "Homemade with organic lemons and fresh mint.",
-    price: "3.50 AZN",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDyj9FMFyeXmuchyyMp_n52skC2-Zl1WNXkm5zEV5xHHWZKvS73gBJ79LiCMzgrq_tYdtkA9t_2zN-Rz04WbFb23H5LgTHJnJIFm1WPhF9bIdZ_sFToJd_n6En1Mh9sasVTt2p0ob2a2rlXLaaexkx3cIq3ueIudcZJUcpTS0L2G0aCrTr235WM6_rFwa67s4B164iWNNpgJBg8d7jxVHMHpDoAwI4T_vXhinGJwIBeNJql3VHo6Ifo",
-  },
-  {
-    name: "Pistachio Baklava",
-    description: "Four layers of flaky pastry with premium Antep pistachios.",
-    price: "6.50 AZN",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBUcbCcGG1yxw0QBW7Qo9dyzIyceWjIbVkNTcCuTh4M__PB3ULLwmUmW6tPxQme8exqz1tbIkWACPp3GAP9KruQouce1by8ZIA5_DPGNbEGWcq8TJuuv9zTYozDQ6iwD1DznrfkFBBpXvbaDS6VPlEV421y2n89hDadptlepcFVaZUMQZHyD1G7VYxbYI8hcyjhZJb4wMl_oRIpaB59eJr0TDiviPo2J5qsxNhjWefFaLtj1bIFkKCA",
-  },
-];
+const categories = ["All", "Soups", "Kebabs", "Drinks", "Desserts", "Salads"];
 
 export default function CustomerMenu() {
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const dispatch = useAppDispatch();
+  const menuItems = useAppSelector((state) => state.menu);
+  const cartItems = useAppSelector((state) => state.cart.items);
+  const currentOrder = useAppSelector((state) => state.order.currentOrder);
+
+  const filteredItems =
+    activeCategory === "All"
+      ? menuItems
+      : menuItems.filter((item) => item.category === activeCategory);
+
+  const totalItems = cartItems.reduce((sum, ci) => sum + ci.quantity, 0);
+  const totalPrice = cartItems.reduce(
+    (sum, ci) => sum + ci.item.price * ci.quantity,
+    0
+  );
+
   return (
     <>
       {/* TopAppBar */}
@@ -43,14 +37,17 @@ export default function CustomerMenu() {
           <button className="p-2 rounded-full hover:bg-surface-variant transition-colors duration-200">
             <span className="material-symbols-outlined text-primary">search</span>
           </button>
-          <button className="p-2 rounded-full hover:bg-surface-variant transition-colors duration-200">
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="p-2 rounded-full hover:bg-surface-variant transition-colors duration-200"
+          >
             <span className="material-symbols-outlined text-primary">shopping_cart</span>
           </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="mt-16 pt-4">
+      <main className="mt-16 pt-4 pb-32">
         {/* Hero Section */}
         <section className="px-margin-mobile mb-6">
           <div className="relative overflow-hidden rounded-xl h-40 flex items-center p-6 text-on-primary-container bg-primary-container">
@@ -69,11 +66,12 @@ export default function CustomerMenu() {
         {/* Category Navigation */}
         <nav className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-4 shadow-sm border-b border-surface-variant">
           <div className="flex gap-2 overflow-x-auto no-scrollbar px-margin-mobile">
-            {categories.map((cat, index) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
+                onClick={() => setActiveCategory(cat)}
                 className={`whitespace-nowrap px-6 py-2 rounded-full font-label-sm text-label-sm transition-all duration-200 ${
-                  index === 0
+                  activeCategory === cat
                     ? "bg-primary text-on-primary"
                     : "bg-surface-container-high text-on-surface-variant hover:bg-surface-variant"
                 }`}
@@ -86,66 +84,118 @@ export default function CustomerMenu() {
 
         {/* Dish List */}
         <div className="px-margin-mobile mt-6 space-y-4">
-          {dishes.map((dish) => (
-            <div
-              key={dish.name}
-              className="flex bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-surface-container-low transition-transform active:scale-[0.98]"
-            >
-              <div className="w-32 h-32 flex-shrink-0">
-                <img
-                  className="w-full h-full object-cover"
-                  src={dish.image}
-                  alt={dish.name}
-                />
-              </div>
-              <div className="p-4 flex flex-col justify-between flex-grow">
-                <div>
-                  <h3 className="font-headline-md text-headline-md text-on-surface">
-                    {dish.name}
-                  </h3>
-                  <p className="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-2">
-                    {dish.description}
-                  </p>
+          {filteredItems.map((dish) => {
+            const cartItem = cartItems.find((ci) => ci.item.id === dish.id);
+            const quantity = cartItem ? cartItem.quantity : 0;
+
+            return (
+              <div
+                key={dish.id}
+                className={`flex bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-surface-container-low transition-transform active:scale-[0.98] ${
+                  !dish.isAvailable ? "opacity-60" : ""
+                }`}
+              >
+                <div className="w-32 h-32 flex-shrink-0">
+                  <img
+                    className="w-full h-full object-cover"
+                    src={dish.image}
+                    alt={dish.name}
+                  />
                 </div>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="font-bold text-primary font-body-lg text-body-lg">
-                    {dish.price}
-                  </span>
-                  <button className="bg-primary text-on-primary w-10 h-10 rounded-full flex items-center justify-center shadow-md active:bg-primary-container transition-colors">
-                    <span className="material-symbols-outlined">add</span>
-                  </button>
+                <div className="p-4 flex flex-col justify-between flex-grow">
+                  <div>
+                    <h3 className="font-headline-md text-headline-md text-on-surface">
+                      {dish.name}
+                    </h3>
+                    <p className="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-2">
+                      {dish.description}
+                    </p>
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="font-bold text-primary font-body-lg text-body-lg">
+                      {dish.price.toFixed(2)} AZN
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {quantity > 0 && (
+                        <button
+                          onClick={() => dispatch(removeFromCart(dish.id))}
+                          className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-variant text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            remove
+                          </span>
+                        </button>
+                      )}
+                      {quantity > 0 && (
+                        <span className="w-8 text-center font-bold text-on-surface text-body-md">
+                          {quantity}
+                        </span>
+                      )}
+                      <button
+                        disabled={!dish.isAvailable}
+                        onClick={() => dispatch(addToCart(dish))}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-colors ${
+                          dish.isAvailable
+                            ? "bg-primary text-on-primary active:bg-primary-container"
+                            : "bg-surface-variant text-on-surface-variant cursor-not-allowed"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined">
+                          {dish.isAvailable ? "add" : "block"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
 
       {/* Sticky Bottom Cart */}
-      <div className="fixed bottom-6 left-margin-mobile right-margin-mobile z-50">
-        <button className="w-full h-16 bg-on-background text-background rounded-2xl flex items-center justify-between px-6 shadow-2xl transition-transform active:scale-95 group">
+      <div
+        className={`fixed bottom-4 left-4 right-4 z-40 flex justify-center transition-all duration-300 ${
+          totalItems > 0
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-4 pointer-events-none"
+        }`}
+      >
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="w-full max-w-md bg-zinc-900 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-between active:scale-[0.98] transition-transform border border-white/10"
+        >
           <div className="flex items-center gap-3">
             <div className="relative">
               <span className="material-symbols-outlined text-[28px]">shopping_basket</span>
-              <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-on-background font-bold">
-                2
+              <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-zinc-900 font-bold">
+                {totalItems}
               </span>
             </div>
-            <div className="text-left">
-              <span className="font-label-sm text-label-sm block opacity-70">
-                Cart (2 items)
-              </span>
-              <span className="font-headline-md text-headline-md block leading-tight">
-                16.50 AZN
-              </span>
-            </div>
+            <span className="font-bold text-base">
+              {totalItems} {totalItems === 1 ? "məhsul" : "məhsul"} • {totalPrice.toFixed(2)} AZN
+            </span>
           </div>
-          <div className="flex items-center gap-2 group-hover:translate-x-1 transition-transform">
-            <span className="font-label-sm text-label-sm">View Cart</span>
-            <span className="material-symbols-outlined">arrow_forward</span>
+          <div className="flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform">
+            <span className="text-sm font-semibold">Səbətə Bax</span>
+            <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
           </div>
         </button>
       </div>
+
+      {/* Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        onOrderSuccess={() => setIsSuccessModalOpen(true)}
+      />
+
+      {/* Order Success Modal */}
+      <OrderSuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        order={currentOrder}
+      />
     </>
   );
 }
