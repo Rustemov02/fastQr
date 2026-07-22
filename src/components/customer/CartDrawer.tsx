@@ -20,6 +20,26 @@ export default function CartDrawer({ isOpen, onClose, onOrderSuccess }: CartDraw
 
   if (!isOpen) return null;
 
+  const handlePlaceOrder = async () => {
+    try {
+      const result = await dispatch(
+        createOrder({
+          tableNumber: 5,
+          items: cartItems,
+          totalPrice,
+        })
+      ).unwrap();
+
+      if (result) {
+        dispatch(clearCart());
+        onClose();
+        onOrderSuccess();
+      }
+    } catch (error) {
+      console.error("Failed to create order:", error);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex justify-end">
       {/* Backdrop */}
@@ -126,18 +146,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderSuccess }: CartDraw
               </div>
             </div>
             <button
-              onClick={() => {
-                dispatch(
-                  createOrder({
-                    tableNumber: 5,
-                    items: cartItems,
-                    totalPrice,
-                  })
-                );
-                dispatch(clearCart());
-                onClose();
-                onOrderSuccess();
-              }}
+              onClick={handlePlaceOrder}
               className="w-full py-4 bg-primary text-on-primary rounded-xl font-bold text-body-lg shadow-lg active:scale-[0.98] transition-transform"
             >
               Sifarişi Təsdiqlə

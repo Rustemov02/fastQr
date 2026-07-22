@@ -12,8 +12,9 @@ export default function OrderSuccessModal({
   order,
 }: OrderSuccessModalProps) {
   if (!isOpen || !order) return null;
-
-  const totalItems = order.items.reduce((sum, ci) => sum + ci.quantity, 0);
+  console.log("ORDER : " ,order)
+  
+  // const totalItems = order.items.reduce((sum, ci) => sum + ci.quantity, 0);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -49,7 +50,7 @@ export default function OrderSuccessModal({
               Masa #{order.tableNumber}
             </span>
             <span className="text-label-sm text-on-surface-variant font-mono">
-              #{order.id.slice(0, 8).toUpperCase()}
+              #{order.id?.slice(0, 8).toUpperCase()}
             </span>
           </div>
         </div>
@@ -59,15 +60,15 @@ export default function OrderSuccessModal({
           <div className="space-y-3">
             {order.items.map((ci) => (
               <div
-                key={ci.item.id}
+                key={ci.item?.id}
                 className="flex justify-between items-center text-left"
               >
                 <span className="font-body-md text-body-md text-on-surface">
                   <span className="font-bold text-primary">{ci.quantity}x</span>{" "}
-                  {ci.item.name}
+                  {ci.item?.name}
                 </span>
                 <span className="font-bold text-on-surface text-sm flex-shrink-0 ml-4">
-                  {(ci.item.price * ci.quantity).toFixed(2)} AZN
+                  {(ci.item?.price * ci.quantity).toFixed(2)} AZN
                 </span>
               </div>
             ))}
