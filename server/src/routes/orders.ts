@@ -30,10 +30,12 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/orders - Fetch all orders sorted by createdAt descending
+// GET /api/orders - Fetch active (non-completed) orders for the kitchen screen
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
+    const orders = await Order.find({
+      status: { $ne: "completed" },
+    }).sort({ createdAt: 1 });
     res.json(orders);
   } catch (error: any) {
     console.error("Failed to fetch orders:", error.message);

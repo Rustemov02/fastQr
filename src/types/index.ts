@@ -18,6 +18,6 @@ export interface Order {
   tableNumber: number;
   items: CartItem[];
   totalPrice: number;
-  status: "pending" | "preparing" | "ready" | "delivered" | "cancelled";
+  status: "pending" | "preparing" | "ready" | "completed" | "cancelled";
   createdAt: string;
 }
