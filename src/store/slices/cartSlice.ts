@@ -16,7 +16,7 @@ const cartSlice = createSlice({
   reducers: {
     addToCart(state, action: PayloadAction<MenuItem>) {
       const existing = state.items.find(
-        (cartItem) => cartItem.item.id === action.payload.id
+        (cartItem) => cartItem.item._id === action.payload._id
       );
       if (existing) {
         existing.quantity += 1;
@@ -26,7 +26,7 @@ const cartSlice = createSlice({
     },
     removeFromCart(state, action: PayloadAction<string>) {
       const index = state.items.findIndex(
-        (cartItem) => cartItem.item.id === action.payload
+        (cartItem) => cartItem.item._id === action.payload
       );
       if (index !== -1) {
         if (state.items[index].quantity > 1) {

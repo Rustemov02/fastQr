@@ -101,7 +101,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderSuccess }: CartDraw
           ) : (
             cartItems.map((ci) => (
               <div
-                key={ci.item.id}
+                key={ci.item._id}
                 className="flex gap-3 bg-surface-container-lowest p-3 rounded-xl shadow-sm border border-surface-container-low"
               >
                 <img
@@ -115,7 +115,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderSuccess }: CartDraw
                     <button
                       onClick={() => {
                         for (let i = 0; i < ci.quantity; i++) {
-                          dispatch(removeFromCart(ci.item.id));
+                          dispatch(removeFromCart(ci.item._id));
                         }
                       }}
                       className="text-on-surface-variant opacity-60 hover:text-error"
@@ -131,7 +131,7 @@ export default function CartDrawer({ isOpen, onClose, onOrderSuccess }: CartDraw
                     </span>
                     <div className="flex items-center gap-3 bg-surface-container-high rounded-full px-2 py-1">
                       <button
-                        onClick={() => dispatch(removeFromCart(ci.item.id))}
+                        onClick={() => dispatch(removeFromCart(ci.item._id))}
                         className="w-6 h-6 flex items-center justify-center rounded-full bg-surface-container-lowest shadow-sm"
                       >
                         <span className="material-symbols-outlined text-[16px]">

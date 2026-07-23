@@ -1,11 +1,14 @@
 export interface MenuItem {
-  id: string;
+  _id: string;
+  id?: string;
   name: string;
   description: string;
   price: number;
   category: string;
   image: string;
   isAvailable: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CartItem {

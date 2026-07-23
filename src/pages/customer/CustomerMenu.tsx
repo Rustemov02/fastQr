@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../../store";
+import { fetchMenuItems } from "../../store/slices/menuSlice";
 import { addToCart, removeFromCart } from "../../store/slices/cartSlice";
 import CartDrawer from "../../components/customer/CartDrawer";
 import OrderSuccessModal from "../../components/customer/OrderSuccessModal";
@@ -14,9 +15,14 @@ export default function CustomerMenu() {
   const [hasActiveOrders, setHasActiveOrders] = useState(false);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const menuItems = useAppSelector((state) => state.menu);
+  const { items: menuItems, loading, error } = useAppSelector((state) => state.menu);
   const cartItems = useAppSelector((state) => state.cart.items);
   const currentOrder = useAppSelector((state) => state.order.currentOrder);
+
+  // Fetch menu items from backend on mount
+  useEffect(() => {
+    dispatch(fetchMenuItems());
+  }, [dispatch]);
 
   // On mount, check if there are active orders in localStorage
   useEffect(() => {
@@ -31,10 +37,13 @@ export default function CustomerMenu() {
     } catch {}
   }, []);
 
+  // Only show items that are available (inStock === true)
+  const availableItems = menuItems.filter((item) => item.isAvailable);
+
   const filteredItems =
     activeCategory === "All"
-      ? menuItems
-      : menuItems.filter((item) => item.category === activeCategory);
+      ? availableItems
+      : availableItems.filter((item) => item.category === activeCategory);
 
   const totalItems = cartItems.reduce((sum, ci) => sum + ci.quantity, 0);
   const totalPrice = cartItems.reduce(
@@ -96,94 +105,146 @@ export default function CustomerMenu() {
           </section>
         )}
 
-        {/* Category Navigation */}
-        <nav className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-4 shadow-sm border-b border-surface-variant">
-          <div className="flex gap-2 overflow-x-auto no-scrollbar px-margin-mobile">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`whitespace-nowrap px-6 py-2 rounded-full font-label-sm text-label-sm transition-all duration-200 ${
-                  activeCategory === cat
-                    ? "bg-primary text-on-primary"
-                    : "bg-surface-container-high text-on-surface-variant hover:bg-surface-variant"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <svg
+              className="animate-spin h-10 w-10 text-primary mb-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <p className="text-on-surface-variant font-semibold">Menyu yüklənir...</p>
           </div>
-        </nav>
+        )}
 
-        {/* Dish List */}
-        <div className="px-margin-mobile mt-6 space-y-4">
-          {filteredItems.map((dish) => {
-            const cartItem = cartItems.find((ci) => ci.item.id === dish.id);
-            const quantity = cartItem ? cartItem.quantity : 0;
-
-            return (
-              <div
-                key={dish.id}
-                className={`flex bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-surface-container-low transition-transform active:scale-[0.98] ${
-                  !dish.isAvailable ? "opacity-60" : ""
-                }`}
+        {/* Error State */}
+        {!loading && error && (
+          <section className="px-margin-mobile mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+              <span className="material-symbols-outlined text-[48px] text-red-300 mb-3">cloud_off</span>
+              <p className="text-red-700 font-semibold mb-1">Serverə qoşulmaq mümkün olmadı</p>
+              <p className="text-red-500 text-sm mb-4">Zəhmət olmasa daha sonra yenidən cəhd edin</p>
+              <button
+                onClick={() => dispatch(fetchMenuItems())}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
               >
-                <div className="w-32 h-32 flex-shrink-0">
-                  <img
-                    className="w-full h-full object-cover"
-                    src={dish.image}
-                    alt={dish.name}
-                  />
-                </div>
-                <div className="p-4 flex flex-col justify-between flex-grow">
-                  <div>
-                    <h3 className="font-headline-md text-headline-md text-on-surface">
-                      {dish.name}
-                    </h3>
-                    <p className="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-2">
-                      {dish.description}
-                    </p>
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="font-bold text-primary font-body-lg text-body-lg">
-                      {dish.price.toFixed(2)} AZN
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {quantity > 0 && (
-                        <button
-                          onClick={() => dispatch(removeFromCart(dish.id))}
-                          className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-variant text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">
-                            remove
-                          </span>
-                        </button>
-                      )}
-                      {quantity > 0 && (
-                        <span className="w-8 text-center font-bold text-on-surface text-body-md">
-                          {quantity}
-                        </span>
-                      )}
-                      <button
-                        disabled={!dish.isAvailable}
-                        onClick={() => dispatch(addToCart(dish))}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-colors ${
-                          dish.isAvailable
-                            ? "bg-primary text-on-primary active:bg-primary-container"
-                            : "bg-surface-variant text-on-surface-variant cursor-not-allowed"
-                        }`}
-                      >
-                        <span className="material-symbols-outlined">
-                          {dish.isAvailable ? "add" : "block"}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                Yenidən Cəhd Et
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Empty State — no available products */}
+        {!loading && !error && availableItems.length === 0 && (
+          <section className="px-margin-mobile">
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <span className="material-symbols-outlined text-[72px] text-on-surface-variant/30 mb-4">
+                restaurant_menu
+              </span>
+              <h2 className="text-headline-md font-headline-md text-on-surface mb-2">
+                Hal-hazırda menyuda aktiv məhsul yoxdur
+              </h2>
+              <p className="text-body-md text-on-surface-variant max-w-xs">
+                Yeni məhsullar əlavə edildikdə burada görünəcək.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Show category nav + items only when there are available items */}
+        {!loading && !error && availableItems.length > 0 && (
+          <>
+            {/* Category Navigation */}
+            <nav className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-4 shadow-sm border-b border-surface-variant">
+              <div className="flex gap-2 overflow-x-auto no-scrollbar px-margin-mobile">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`whitespace-nowrap px-6 py-2 rounded-full font-label-sm text-label-sm transition-all duration-200 ${
+                      activeCategory === cat
+                        ? "bg-primary text-on-primary"
+                        : "bg-surface-container-high text-on-surface-variant hover:bg-surface-variant"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
-            );
-          })}
-        </div>
+            </nav>
+
+            {/* Dish List */}
+            <div className="px-margin-mobile mt-6 space-y-4">
+              {filteredItems.length === 0 ? (
+                <div className="text-center py-12 text-on-surface-variant">
+                  <p className="font-semibold">Bu kateqoriyada aktiv məhsul yoxdur</p>
+                </div>
+              ) : (
+                filteredItems.map((dish) => {
+                  const cartItem = cartItems.find((ci) => ci.item._id === dish._id);
+                  const quantity = cartItem ? cartItem.quantity : 0;
+
+                  return (
+                    <div
+                      key={dish._id}
+                      className="flex bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-surface-container-low transition-transform active:scale-[0.98]"
+                    >
+                      <div className="w-32 h-32 flex-shrink-0">
+                        <img
+                          className="w-full h-full object-cover"
+                          src={dish.image}
+                          alt={dish.name}
+                        />
+                      </div>
+                      <div className="p-4 flex flex-col justify-between flex-grow">
+                        <div>
+                          <h3 className="font-headline-md text-headline-md text-on-surface">
+                            {dish.name}
+                          </h3>
+                          <p className="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-2">
+                            {dish.description}
+                          </p>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="font-bold text-primary font-body-lg text-body-lg">
+                            {dish.price.toFixed(2)} AZN
+                          </span>
+                          <div className="flex items-center gap-1">
+                            {quantity > 0 && (
+                              <button
+                                onClick={() => dispatch(removeFromCart(dish._id))}
+                                className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-variant text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">
+                                  remove
+                                </span>
+                              </button>
+                            )}
+                            {quantity > 0 && (
+                              <span className="w-8 text-center font-bold text-on-surface text-body-md">
+                                {quantity}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => dispatch(addToCart(dish))}
+                              className="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-colors bg-primary text-on-primary active:bg-primary-container"
+                            >
+                              <span className="material-symbols-outlined">add</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </>
+        )}
       </main>
 
       {/* Sticky Bottom Cart */}

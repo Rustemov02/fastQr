@@ -1,75 +1,154 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { MenuItem } from "../../types";
 
-const initialState: MenuItem[] = [
-  {
-    id: "1",
-    name: "Adana Kebab",
-    description: "Spiced hand-minced meat grilled on wide iron skewers.",
-    price: 12.0,
-    category: "Kebabs",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAxGIGUvwEERB-JiXaFbsd-hOAE3JJOt1vFoo3umi2ewjI8Wea4fMse6i7QoquhgCZWgUNSXIat7Fx5cEZtsz0HekipNNE1bXSwX068BqdaPzPcQKZyqUaMvBuGDH2Xa57qApc7Ch3DWDFw4vwBQ94NvCtGhhRjXjvKwLJbafg5VWITqq99q9wC6HwS8Gc7-jkvi60GC532WVF6xKs3SG2SGxxL4ECzKrbYxPE1QEEpd7GVs2yw9vWi",
-    isAvailable: true,
-  },
-  {
-    id: "2",
-    name: "Lentil Soup",
-    description: "Traditional Turkish style with lemon and croutons.",
-    price: 4.5,
-    category: "Soups",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC1dDBlGX0BnGDlZ4NAyyHCo2ePdxUghwbhGiWZwrZ4CgPeXhFZnv4Eatbq-qwSHglOTrfxL_vR3sWiYb3rjE1NPR08wuKzpfSVkjG9CcJ9jdAPuperST9gsYtBQBBjnnreS0Ish_9MC-vjPKq3F__4jM7WxLamEkEpmL2RLDo7kUqGUBoVwAdhB3T2k34zXkpxBqRPDHIMkBZriv-yGBe9hJY6zREJNh7D2YRahDAQ_V3olGbzHSwu",
-    isAvailable: true,
-  },
-  {
-    id: "3",
-    name: "Pistachio Baklava",
-    description: "Four layers of flaky pastry with premium Antep pistachios.",
-    price: 6.5,
-    category: "Desserts",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBUcbCcGG1yxw0QBW7Qo9dyzIyceWjIbVkNTcCuTh4M__PB3ULLwmUmW6tPxQme8exqz1tbIkWACPp3GAP9KruQouce1by8ZIA5_DPGNbEGWcq8TJuuv9zTYozDQ6iwD1DznrfkFBBpXvbaDS6VPlEV421y2n89hDadptlepcFVaZUMQZHyD1G7VYxbYI8hcyjhZJb4wMl_oRIpaB59eJr0TDiviPo2J5qsxNhjWefFaLtj1bIFkKCA",
-    isAvailable: true,
-  },
-  {
-    id: "4",
-    name: "Fresh Lemonade",
-    description: "Homemade with organic lemons and fresh mint.",
-    price: 3.5,
-    category: "Drinks",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDyj9FMFyeXmuchyyMp_n52skC2-Zl1WNXkm5zEV5xHHWZKvS73gBJ79LiCMzgrq_tYdtkA9t_2zN-Rz04WbFb23H5LgTHJnJIFm1WPhF9bIdZ_sFToJd_n6En1Mh9sasVTt2p0ob2a2rlXLaaexkx3cIq3ueIudcZJUcpTS0L2G0aCrTr235WM6_rFwa67s4B164iWNNpgJBg8d7jxVHMHpDoAwI4T_vXhinGJwIBeNJql3VHo6Ifo",
-    isAvailable: false,
-  },
-  {
-    id: "5",
-    name: "Shepherd Salad",
-    description: "Fresh tomatoes, cucumbers, onions, and parsley with pomegranate molasses.",
-    price: 5.5,
-    category: "Salads",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBrvtVVlIvWK8KxrL9XEQnF-5pPbjyWMYFKT9vV7O9vcovtTsWwgt7og7iUVl0eoEKSQRvxdYljTkp-WD5b1ykf1UA_QCJcRaWa6qlznXoCDCNmtxGURmorzvjElVj_qXbMEebpfU_U5CLDLTXDQ-DyUa2CLFgyGl8Jqu8K78dKqHRlbdKIDk7UlzM7xSIOQmyBZexSvJsisuOIaQ1157oxi0HKFiYlCT6JMxfz_m5h29Lfgc-hE_SX",
-    isAvailable: true,
-  },
-];
+const API_BASE = "http://localhost:5000/api/menu";
+
+// Async Thunks
+export const fetchMenuItems = createAsyncThunk(
+  "menu/fetchMenuItems",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch(API_BASE);
+      if (!res.ok) throw new Error("Failed to fetch menu items");
+      const data = await res.json();
+      return data as MenuItem[];
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createMenuItem = createAsyncThunk(
+  "menu/createMenuItem",
+  async (item: Omit<MenuItem, "_id" | "id" | "createdAt" | "updatedAt">, { rejectWithValue }) => {
+    try {
+      const res = await fetch(API_BASE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item),
+      });
+      if (!res.ok) throw new Error("Failed to create menu item");
+      const data = await res.json();
+      return data as MenuItem;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateMenuItem = createAsyncThunk(
+  "menu/updateMenuItem",
+  async ({ id, data }: { id: string; data: Partial<MenuItem> }, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update menu item");
+      const updated = await res.json();
+      return updated as MenuItem;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const toggleAvailability = createAsyncThunk(
+  "menu/toggleAvailability",
+  async ({ id, isAvailable }: { id: string; isAvailable: boolean }, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isAvailable }),
+      });
+      if (!res.ok) throw new Error("Failed to toggle availability");
+      const updated = await res.json();
+      return updated as MenuItem;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteMenuItem = createAsyncThunk(
+  "menu/deleteMenuItem",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete menu item");
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Initial state — completely empty, no mock data
+const initialState: {
+  items: MenuItem[];
+  loading: boolean;
+  error: string | null;
+} = {
+  items: [],
+  loading: false,
+  error: null,
+};
 
 const menuSlice = createSlice({
   name: "menu",
   initialState,
   reducers: {
-    toggleAvailability(state, action: PayloadAction<string>) {
-      const item = state.find((menuItem) => menuItem.id === action.payload);
-      if (item) {
-        item.isAvailable = !item.isAvailable;
+    setMenuItems(state, action: PayloadAction<MenuItem[]>) {
+      state.items = action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    // Fetch all
+    builder.addCase(fetchMenuItems.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(fetchMenuItems.fulfilled, (state, action) => {
+      state.loading = false;
+      state.items = action.payload;
+    });
+    builder.addCase(fetchMenuItems.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Create
+    builder.addCase(createMenuItem.fulfilled, (state, action) => {
+      state.items.unshift(action.payload);
+    });
+
+    // Update
+    builder.addCase(updateMenuItem.fulfilled, (state, action) => {
+      const index = state.items.findIndex((item) => item._id === action.payload._id);
+      if (index !== -1) {
+        state.items[index] = action.payload;
       }
-    },
-    setMenuItems(_state, action: PayloadAction<MenuItem[]>) {
-      return action.payload;
-    },
+    });
+
+    // Toggle availability
+    builder.addCase(toggleAvailability.fulfilled, (state, action) => {
+      const index = state.items.findIndex((item) => item._id === action.payload._id);
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      }
+    });
+
+    // Delete
+    builder.addCase(deleteMenuItem.fulfilled, (state, action) => {
+      state.items = state.items.filter((item) => item._id !== action.payload);
+    });
   },
 });
 
-export const { toggleAvailability, setMenuItems } = menuSlice.actions;
+export const { setMenuItems } = menuSlice.actions;
 export default menuSlice.reducer;
