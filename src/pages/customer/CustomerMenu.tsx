@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../../store";
 import { addToCart, removeFromCart } from "../../store/slices/cartSlice";
 import CartDrawer from "../../components/customer/CartDrawer";
@@ -10,10 +11,25 @@ export default function CustomerMenu() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [hasActiveOrders, setHasActiveOrders] = useState(false);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const menuItems = useAppSelector((state) => state.menu);
   const cartItems = useAppSelector((state) => state.cart.items);
   const currentOrder = useAppSelector((state) => state.order.currentOrder);
+
+  // On mount, check if there are active orders in localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("activeOrderIds");
+      if (stored) {
+        const ids = JSON.parse(stored);
+        if (Array.isArray(ids) && ids.length > 0) {
+          setHasActiveOrders(true);
+        }
+      }
+    } catch {}
+  }, []);
 
   const filteredItems =
     activeCategory === "All"
@@ -62,6 +78,23 @@ export default function CustomerMenu() {
             </div>
           </div>
         </section>
+
+        {/* Active Orders Banner */}
+        {hasActiveOrders && (
+          <section className="px-margin-mobile mb-6">
+            <button
+              onClick={() => navigate("/order-status")}
+              className="w-full flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800 active:scale-[0.98] transition-transform hover:bg-blue-100"
+            >
+              <span className="material-symbols-outlined text-blue-500">receipt_long</span>
+              <div className="flex-grow text-left">
+                <p className="font-semibold">Aktiv sifarişləriniz var</p>
+                <p className="text-sm text-blue-600">Statusu yoxlamaq üçün klikləyin</p>
+              </div>
+              <span className="material-symbols-outlined text-blue-400">arrow_forward</span>
+            </button>
+          </section>
+        )}
 
         {/* Category Navigation */}
         <nav className="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-4 shadow-sm border-b border-surface-variant">

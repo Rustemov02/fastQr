@@ -43,6 +43,41 @@ router.get("/", async (_req: Request, res: Response) => {
   }
 });
 
+// GET /api/orders/:id - Fetch a single order by its MongoDB _id
+router.get("/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+
+    if (!order) {
+      res.status(404).json({ message: "Order not found" });
+      return;
+    }
+
+    res.json(order);
+  } catch (error: any) {
+    console.error("Failed to fetch order:", error.message);
+    res.status(500).json({ message: "Failed to fetch order", error: error.message });
+  }
+});
+
+// POST /api/orders/multiple - Fetch multiple orders by their IDs (for multi-order status polling)
+router.post("/multiple", async (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ message: "Missing or invalid 'ids' array" });
+      return;
+    }
+
+    const orders = await Order.find({ _id: { $in: ids } });
+    res.json(orders);
+  } catch (error: any) {
+    console.error("Failed to fetch multiple orders:", error.message);
+    res.status(500).json({ message: "Failed to fetch multiple orders", error: error.message });
+  }
+});
+
 // PATCH /api/orders/:id/status - Update order status
 router.patch("/:id/status", async (req: Request, res: Response) => {
   try {

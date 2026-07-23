@@ -87,6 +87,46 @@ export const createOrder = createAsyncThunk<Order, CreateOrderPayload>(
   }
 );
 
+// Async thunk to fetch a single order by ID
+export const fetchOrderById = createAsyncThunk<Order, string>(
+  "order/fetchOrderById",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_BASE}/${id}`);
+      if (!res.ok) {
+        const err = await res.json();
+        return rejectWithValue(err.message || "Failed to fetch order");
+      }
+      const data = await res.json();
+      return transformOrder(data);
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
+// Async thunk to fetch multiple orders by IDs (for multi-order status tracking)
+export const fetchMultipleOrders = createAsyncThunk<Order[], string[]>(
+  "order/fetchMultipleOrders",
+  async (ids, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${API_BASE}/multiple`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        return rejectWithValue(err.message || "Failed to fetch orders");
+      }
+      const data = await res.json();
+      return data.map(transformOrder);
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Network error");
+    }
+  }
+);
+
 // Async thunk to fetch active (non-completed) orders for the kitchen
 export const fetchOrders = createAsyncThunk<Order[], void>(
   "order/fetchOrders",

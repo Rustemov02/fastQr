@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../../store";
 import { addToCart, removeFromCart, clearCart } from "../../store/slices/cartSlice";
 import { createOrder } from "../../store/slices/orderSlice";
@@ -8,8 +9,28 @@ interface CartDrawerProps {
   onOrderSuccess: () => void;
 }
 
+// Helper to push an order ID into the activeOrderIds array in localStorage
+function addActiveOrderId(orderId: string) {
+  try {
+    const stored = localStorage.getItem("activeOrderIds");
+    let ids: string[] = [];
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) ids = parsed;
+    }
+    // Avoid duplicates
+    if (!ids.includes(orderId)) {
+      ids.push(orderId);
+    }
+    localStorage.setItem("activeOrderIds", JSON.stringify(ids));
+  } catch (error) {
+    console.error("Failed to update activeOrderIds:", error);
+  }
+}
+
 export default function CartDrawer({ isOpen, onClose, onOrderSuccess }: CartDrawerProps) {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const cartItems = useAppSelector((state) => state.cart.items);
 
   const totalQuantity = cartItems.reduce((sum, ci) => sum + ci.quantity, 0);
@@ -31,9 +52,12 @@ export default function CartDrawer({ isOpen, onClose, onOrderSuccess }: CartDraw
       ).unwrap();
 
       if (result) {
+        // Save order ID to localStorage for multi-order tracking
+        addActiveOrderId(result.id);
         dispatch(clearCart());
         onClose();
-        onOrderSuccess();
+        // Navigate to order status page
+        navigate("/order-status");
       }
     } catch (error) {
       console.error("Failed to create order:", error);
